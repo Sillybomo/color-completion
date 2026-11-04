@@ -26,6 +26,11 @@ public class ModernModule extends XposedModule {
     /** 记录加载进程；参数由框架提供。@author bomo */
     @Override public void onModuleLoaded(XposedModuleInterface.ModuleLoadedParam param) { processName = param.getProcessName(); }
 
+    /** 诊断：确认包加载回调在目标进程是否触发，用于评估回调时机选择。@author bomo */
+    @Override public void onPackageLoaded(XposedModuleInterface.PackageLoadedParam param) {
+        if ("com.oplus.atlas".equals(param.getPackageName())) log(Log.INFO, "功能补全", "诊断：onPackageLoaded 已触发");
+    }
+
     /** 仅在目标媒体进程中安装钩子；不兼容时记录错误并保留系统原有行为。@author bomo */
     @Override public void onPackageReady(XposedModuleInterface.PackageReadyParam param) {
         if (!"com.oplus.atlas".equals(param.getPackageName()) || !"com.oplus.persist.multimedia".equals(processName)) return;
@@ -36,10 +41,24 @@ public class ModernModule extends XposedModule {
             configClass = Class.forName("com.oplus.app.OplusAppSwitchConfig", false, loader);
             observerClass = Class.forName("com.oplus.app.OplusAppSwitchManager$OnAppSwitchObserver", false, loader);
             remote = getRemotePreferences("selection");
+            // 诊断：确认两种加载器解析到的是否为同一个 Class，用于判断钩子是否挂在另一份类上。@author bomo
+            Class<?> probe = Class.forName("com.oplus.atlas.OplusVideoFeatureMode", false, param.getDefaultClassLoader());
+            log(Log.INFO, "功能补全", "诊断：加载器同一=" + (loader == param.getDefaultClassLoader()) + "，同一 Class=" + (probe == target));
+            // 诊断：getVideoFeatureConfig 在旧版中启动后必被调用，用于判断钩子通道本身是否生效。@author bomo
+            try {
+                Method feature = target.getDeclaredMethod("getVideoFeatureConfig");
+                feature.setAccessible(true);
+                hook(feature).intercept(chain -> {
+                    Object value = chain.proceed();
+                    log(Log.INFO, "功能补全", "诊断：getVideoFeatureConfig 已触发");
+                    return value;
+                });
+            } catch (Throwable error) { logError("诊断钩子安装失败", error); }
             Method register = target.getDeclaredMethod("registerAppSwitchObserver");
             register.setAccessible(true);
             hook(register).intercept(chain -> {
                 Object instance = chain.getThisObject();
+                log(Log.INFO, "功能补全", "诊断：registerAppSwitchObserver 已拦截");
                 try { prepare(instance); } catch (Throwable error) { logError("合并名单失败", error); }
                 Object result = chain.proceed();
                 try { watch(instance); } catch (Throwable error) { logError("监听配置失败", error); }
@@ -59,7 +78,9 @@ public class ModernModule extends XposedModule {
     }
     /** 合并原名单与远程设置；仅处理已核实的 V1 分支。@author bomo */
     private synchronized void prepare(Object target) throws ReflectiveOperationException {
-        if ("V2".equals(read(target, "mVppVersion"))) return;
+        Object version = read(target, "mVppVersion");
+        log(Log.INFO, "功能补全", "诊断：mVppVersion=" + version);
+        if ("V2".equals(version)) return;
         @SuppressWarnings("unchecked") List<String> current = (List<String>) read(target, "mConfigOsieSrAPP");
         if (current == null) throw new IllegalStateException("系统名单为空");
         if (service != target) { service = target; baseline = new ArrayList<>(current); }
