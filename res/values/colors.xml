@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent">#FF0E7C7B</color>
+    <color name="accent_soft">#1A0E7C7B</color>
+    <color name="on">#FF2E9E6B</color>
+    <color name="off">#FF98A2AE</color>
+    <color name="warn">#FFC2703A</color>
+    <color name="card">#14808080</color>
+    <color name="title">#DE000000</color>
+    <color name="summary">#99000000</color>
+    <color name="pill_text_on">#FFFFFFFF</color>
+</resources>

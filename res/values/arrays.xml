@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @author bomo; 限定模块作用于系统服务。 -->
+<resources><string-array name="xposed_scope"><item>com.oplus.atlas</item></string-array></resources>
