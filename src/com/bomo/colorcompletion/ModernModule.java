@@ -22,28 +22,41 @@ public class ModernModule extends XposedModule {
     private Class<?> managerClass;
     private Class<?> configClass;
     private Class<?> observerClass;
+    private volatile boolean installed;
 
     /** 记录加载进程；参数由框架提供。@author bomo */
     @Override public void onModuleLoaded(XposedModuleInterface.ModuleLoadedParam param) { processName = param.getProcessName(); }
 
-    /** 诊断：确认包加载回调在目标进程是否触发，用于评估回调时机选择。@author bomo */
-    @Override public void onPackageLoaded(XposedModuleInterface.PackageLoadedParam param) {
-        if ("com.oplus.atlas".equals(param.getPackageName())) log(Log.INFO, "功能补全", "诊断：onPackageLoaded 已触发");
-    }
+    /** 最早回调：默认类加载器就绪、AppComponentFactory 之前，钩子在此安装以免错过首次注册。@author bomo */
+    @Override public void onPackageLoaded(XposedModuleInterface.PackageLoadedParam param) { install(param, "onPackageLoaded"); }
 
-    /** 仅在目标媒体进程中安装钩子；不兼容时记录错误并保留系统原有行为。@author bomo */
-    @Override public void onPackageReady(XposedModuleInterface.PackageReadyParam param) {
+    /** 备用回调：框架若先触发此时机仍可安装；重复调用由标志位拦截。@author bomo */
+    @Override public void onPackageReady(XposedModuleInterface.PackageReadyParam param) { install(param, "onPackageReady"); }
+
+    /** 在目标媒体进程安装钩子；仅首次生效，不兼容时记录错误并保留系统原有行为。@author bomo */
+    private synchronized void install(XposedModuleInterface.PackageLoadedParam param, String stage) {
+        if (installed) return;
         if (!"com.oplus.atlas".equals(param.getPackageName()) || !"com.oplus.persist.multimedia".equals(processName)) return;
         try {
-            ClassLoader loader = param.getClassLoader();
+            ClassLoader loader = param.getDefaultClassLoader();
             Class<?> target = Class.forName("com.oplus.atlas.OplusVideoFeatureMode", false, loader);
             managerClass = Class.forName("com.oplus.app.OplusAppSwitchManager", false, loader);
             configClass = Class.forName("com.oplus.app.OplusAppSwitchConfig", false, loader);
             observerClass = Class.forName("com.oplus.app.OplusAppSwitchManager$OnAppSwitchObserver", false, loader);
             remote = getRemotePreferences("selection");
-            // 诊断：确认两种加载器解析到的是否为同一个 Class，用于判断钩子是否挂在另一份类上。@author bomo
-            Class<?> probe = Class.forName("com.oplus.atlas.OplusVideoFeatureMode", false, param.getDefaultClassLoader());
-            log(Log.INFO, "功能补全", "诊断：加载器同一=" + (loader == param.getDefaultClassLoader()) + "，同一 Class=" + (probe == target));
+            // 诊断：确认目标类与进程默认加载器是否同源，排除钩子挂在另一份类上的可能。@author bomo
+            log(Log.INFO, "功能补全", "诊断：目标类加载器同源=" + (target.getClassLoader() == loader) + "，安装时机=" + stage);
+            // 诊断：输出关键方法签名，确认反射目标与系统实际调用一致。@author bomo
+            try {
+                StringBuilder table = new StringBuilder();
+                for (Method m : target.getDeclaredMethods()) {
+                    String name = m.getName();
+                    if (name.contains("AppSwitch") || name.contains("Osie") || name.contains("VideoFeature")) {
+                        table.append(name).append('(').append(m.getParameterCount()).append(") ");
+                    }
+                }
+                log(Log.INFO, "功能补全", "诊断：方法表 " + table);
+            } catch (Throwable error) { logError("诊断方法表失败", error); }
             // 诊断：getVideoFeatureConfig 在旧版中启动后必被调用，用于判断钩子通道本身是否生效。@author bomo
             try {
                 Method feature = target.getDeclaredMethod("getVideoFeatureConfig");
@@ -54,6 +67,16 @@ public class ModernModule extends XposedModule {
                     return value;
                 });
             } catch (Throwable error) { logError("诊断钩子安装失败", error); }
+            // 诊断：服务 onCreate 必然执行，用于判定钩子通道在该进程是否生效。@author bomo
+            try {
+                Class<?> service = Class.forName("com.oplus.atlas.OplusAtlasService", false, loader);
+                Method onCreate = service.getDeclaredMethod("onCreate");
+                onCreate.setAccessible(true);
+                hook(onCreate).intercept(chain -> {
+                    log(Log.INFO, "功能补全", "诊断：OplusAtlasService.onCreate 已触发");
+                    return chain.proceed();
+                });
+            } catch (Throwable error) { logError("诊断服务钩子失败", error); }
             Method register = target.getDeclaredMethod("registerAppSwitchObserver");
             register.setAccessible(true);
             hook(register).intercept(chain -> {
@@ -64,7 +87,8 @@ public class ModernModule extends XposedModule {
                 try { watch(instance); } catch (Throwable error) { logError("监听配置失败", error); }
                 return result;
             });
-            log(Log.INFO, "功能补全", "媒体名单钩子已安装");
+            log(Log.INFO, "功能补全", "媒体名单钩子已安装（" + stage + "）");
+            installed = true;
         } catch (Throwable error) { logError("媒体服务不兼容", error); }
     }
 
