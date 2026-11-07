@@ -1,24 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- GW Tune 自适应图标前景：手柄 + 插帧动效条（author bomo）
-     安全区为视口中心 66x66，故所有元素落在 x/y 21~87 之间。 -->
+<!-- 功能补全 自适应图标前景：双窗屏幕框 + 星芒（author bomo）
+     安全区为视口中心 66x66，主体落在 x/y 21~87 之间。 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
 
-    <!-- 手柄主体 -->
-    <path android:fillColor="#FFFFFFFF"
-        android:pathData="M38,44 h26 a12,12 0 0 1 12,12 v6 a10,10 0 0 1 -10,10 h-30 a10,10 0 0 1 -10,-10 v-6 a12,12 0 0 1 12,-12 z" />
-    <!-- 左侧摇杆 -->
-    <path android:fillColor="#FF0E7C7B"
-        android:pathData="M41,57 m-5,0 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0z" />
-    <!-- 右侧按键 -->
-    <path android:fillColor="#FF0E7C7B"
-        android:pathData="M62,54 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0z" />
-    <path android:fillColor="#FF34D399"
-        android:pathData="M68,59 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0z" />
+    <!-- 双窗屏幕框：evenOdd 挖出左右两扇窗口，对应横屏布局功能 -->
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="
+        M38,40 h32 a8,8 0 0 1 8,8 v28 a8,8 0 0 1 -8,8 h-32 a8,8 0 0 1 -8,-8 v-28 a8,8 0 0 1 8,-8 z
+        M44,48 h7 v28 h-7 z
+        M57,48 h7 v28 h-7 z" />
 
-    <!-- 插帧动效条：由低到高，象征帧率被抬升 -->
-    <path android:fillColor="#66FFFFFF" android:pathData="M74,64 h4 v6 h-4 z" />
-    <path android:fillColor="#AAFFFFFF" android:pathData="M80,58 h4 v12 h-4 z" />
-    <path android:fillColor="#FFFFFFFF" android:pathData="M86,50 h4 v20 h-4 z" />
+    <!-- 星芒：对应画质增强，落在屏幕框右上方 -->
+    <path android:fillColor="#FFFFE9A8"
+        android:pathData="M80,22 L82.8,29.2 L90,32 L82.8,34.8 L80,42 L77.2,34.8 L70,32 L77.2,29.2 Z" />
 </vector>
