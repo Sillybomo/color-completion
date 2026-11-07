@@ -8,6 +8,9 @@ import io.github.libxposed.service.XposedServiceHelper;
 
 /** 管理模块应用与 LSPosed 远程配置之间的连接。@author bomo */
 public class ModuleApplication extends Application {
+    /** 横屏布局名单在本地与远程配置中的键名。@author bomo */
+    public static final String LANDSCAPE_KEY = "landscape";
+
     private volatile XposedService service;
 
     /** 监听框架服务连接；配置在服务可用后同步。@author bomo */
@@ -20,18 +23,25 @@ public class ModuleApplication extends Application {
             @Override public void onServiceDied(XposedService value) { if (service == value) service = null; }
         });
     }
-    /** 将本地选择同步到框架；服务未连接或同步失败时返回 false，不丢失本地选择。@author bomo */
+    /** 将本地两份名单同步到框架；服务未连接或任一同步失败时返回 false，不丢失本地选择。@author bomo */
     public boolean synchronizeSelection() {
         XposedService current = service;
         SharedPreferences local = getSharedPreferences(AppListProvider.PREFS, 0);
-        if (current == null || !local.contains(AppListProvider.KEY)) return false;
+        if (current == null) return false;
+        boolean ok = true;
         try {
-            String selection = local.getString(AppListProvider.KEY, "");
             SharedPreferences remote = current.getRemotePreferences("selection");
-            if (selection.equals(remote.getString("packages", null))) return true;
-            boolean ok = remote.edit().putString("packages", selection).commit();
-            if (!ok) Log.e("功能补全", "框架配置保存失败");
-            return ok;
+            ok = sync(remote, local, AppListProvider.KEY, "packages") & sync(remote, local, LANDSCAPE_KEY, LANDSCAPE_KEY);
         } catch (RuntimeException error) { Log.e("功能补全", "框架配置同步失败", error); return false; }
+        return ok;
+    }
+    /** 同步单个键；本地无该键视为成功，提交失败记录日志并返回 false。@author bomo */
+    private boolean sync(SharedPreferences remote, SharedPreferences local, String localKey, String remoteKey) {
+        if (!local.contains(localKey)) return true;
+        String selection = local.getString(localKey, "");
+        if (selection.equals(remote.getString(remoteKey, null))) return true;
+        boolean ok = remote.edit().putString(remoteKey, selection).commit();
+        if (!ok) Log.e("功能补全", "框架配置保存失败：" + remoteKey);
+        return ok;
     }
 }

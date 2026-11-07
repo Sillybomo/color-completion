@@ -11,8 +11,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-/** 通过 LSPosed 远程配置扩展媒体服务的应用名单。@author bomo */
+/** 通过 LSPosed 远程配置扩展媒体色彩名单与系统横屏布局名单。@author bomo */
 public class ModernModule extends XposedModule {
     private String processName;
     private SharedPreferences remote;
@@ -22,7 +23,8 @@ public class ModernModule extends XposedModule {
     private Class<?> managerClass;
     private Class<?> configClass;
     private Class<?> observerClass;
-    private volatile boolean installed;
+    private volatile boolean atlasInstalled;
+    private volatile boolean settingsInstalled;
 
     /** 记录加载进程；参数由框架提供。@author bomo */
     @Override public void onModuleLoaded(XposedModuleInterface.ModuleLoadedParam param) { processName = param.getProcessName(); }
@@ -30,13 +32,21 @@ public class ModernModule extends XposedModule {
     /** 最早回调：默认类加载器就绪、AppComponentFactory 之前，钩子在此安装以免错过首次注册。@author bomo */
     @Override public void onPackageLoaded(XposedModuleInterface.PackageLoadedParam param) { install(param, "onPackageLoaded"); }
 
-    /** 备用回调：框架若先触发此时机仍可安装；重复调用由标志位拦截。@author bomo */
+    /** 备用回调：框架若先触发此时机仍可安装；重复调用由各目标标志位拦截。@author bomo */
     @Override public void onPackageReady(XposedModuleInterface.PackageReadyParam param) { install(param, "onPackageReady"); }
 
-    /** 在目标媒体进程安装钩子；仅首次生效，不兼容时记录错误并保留系统原有行为。@author bomo */
+    /** 按目标包分发安装；每个目标只安装一次，不兼容时记录错误并保留系统原有行为。@author bomo */
     private synchronized void install(XposedModuleInterface.PackageLoadedParam param, String stage) {
-        if (installed) return;
-        if (!"com.oplus.atlas".equals(param.getPackageName()) || !"com.oplus.persist.multimedia".equals(processName)) return;
+        String pkg = param.getPackageName();
+        if ("com.oplus.atlas".equals(pkg) && "com.oplus.persist.multimedia".equals(processName) && !atlasInstalled) {
+            installAtlas(param, stage);
+        } else if ("com.android.settings".equals(pkg) && !settingsInstalled) {
+            installSettings(param, stage);
+        }
+    }
+
+    /** 在媒体进程安装色彩名单钩子；仅处理已核实的 V1 分支。@author bomo */
+    private void installAtlas(XposedModuleInterface.PackageLoadedParam param, String stage) {
         try {
             ClassLoader loader = param.getDefaultClassLoader();
             Class<?> target = Class.forName("com.oplus.atlas.OplusVideoFeatureMode", false, loader);
@@ -44,52 +54,61 @@ public class ModernModule extends XposedModule {
             configClass = Class.forName("com.oplus.app.OplusAppSwitchConfig", false, loader);
             observerClass = Class.forName("com.oplus.app.OplusAppSwitchManager$OnAppSwitchObserver", false, loader);
             remote = getRemotePreferences("selection");
-            // 诊断：确认目标类与进程默认加载器是否同源，排除钩子挂在另一份类上的可能。@author bomo
-            log(Log.INFO, "功能补全", "诊断：目标类加载器同源=" + (target.getClassLoader() == loader) + "，安装时机=" + stage);
-            // 诊断：输出关键方法签名，确认反射目标与系统实际调用一致。@author bomo
-            try {
-                StringBuilder table = new StringBuilder();
-                for (Method m : target.getDeclaredMethods()) {
-                    String name = m.getName();
-                    if (name.contains("AppSwitch") || name.contains("Osie") || name.contains("VideoFeature")) {
-                        table.append(name).append('(').append(m.getParameterCount()).append(") ");
-                    }
-                }
-                log(Log.INFO, "功能补全", "诊断：方法表 " + table);
-            } catch (Throwable error) { logError("诊断方法表失败", error); }
-            // 诊断：getVideoFeatureConfig 在旧版中启动后必被调用，用于判断钩子通道本身是否生效。@author bomo
-            try {
-                Method feature = target.getDeclaredMethod("getVideoFeatureConfig");
-                feature.setAccessible(true);
-                hook(feature).intercept(chain -> {
-                    Object value = chain.proceed();
-                    log(Log.INFO, "功能补全", "诊断：getVideoFeatureConfig 已触发");
-                    return value;
-                });
-            } catch (Throwable error) { logError("诊断钩子安装失败", error); }
-            // 诊断：服务 onCreate 必然执行，用于判定钩子通道在该进程是否生效。@author bomo
-            try {
-                Class<?> service = Class.forName("com.oplus.atlas.OplusAtlasService", false, loader);
-                Method onCreate = service.getDeclaredMethod("onCreate");
-                onCreate.setAccessible(true);
-                hook(onCreate).intercept(chain -> {
-                    log(Log.INFO, "功能补全", "诊断：OplusAtlasService.onCreate 已触发");
-                    return chain.proceed();
-                });
-            } catch (Throwable error) { logError("诊断服务钩子失败", error); }
             Method register = target.getDeclaredMethod("registerAppSwitchObserver");
             register.setAccessible(true);
             hook(register).intercept(chain -> {
                 Object instance = chain.getThisObject();
-                log(Log.INFO, "功能补全", "诊断：registerAppSwitchObserver 已拦截");
                 try { prepare(instance); } catch (Throwable error) { logError("合并名单失败", error); }
                 Object result = chain.proceed();
                 try { watch(instance); } catch (Throwable error) { logError("监听配置失败", error); }
                 return result;
             });
+            atlasInstalled = true;
             log(Log.INFO, "功能补全", "媒体名单钩子已安装（" + stage + "）");
-            installed = true;
         } catch (Throwable error) { logError("媒体服务不兼容", error); }
+    }
+
+    /** 在设置进程安装横屏布局钩子；统一修改配置表读取结果，列表显示与弹窗选项共用此数据源。@author bomo */
+    private void installSettings(XposedModuleInterface.PackageLoadedParam param, String stage) {
+        try {
+            ClassLoader loader = param.getDefaultClassLoader();
+            Class<?> helper = Class.forName("com.oplus.settings.feature.display.compatible.FoldDatabaseHelper", false, loader);
+            Method query = helper.getDeclaredMethod("getAllConfigInfo", android.content.ContentResolver.class);
+            query.setAccessible(true);
+            hook(query).intercept(chain -> {
+                Object result = chain.proceed();
+                try { applyLandscapeRoster(castMap(result)); }
+                catch (Throwable error) { logError("横屏名单合并失败", error); }
+                return result;
+            });
+            settingsInstalled = true;
+            log(Log.INFO, "功能补全", "横屏布局钩子已安装（" + stage + "）");
+        } catch (Throwable error) { logError("横屏布局不兼容", error); }
+    }
+
+    /** 合并远程横屏名单；名单内应用标记为双窗与全方向支持，与哔哩哔哩的原厂配置一致。@author bomo */
+    private void applyLandscapeRoster(Map<String, Map<String, Object>> all) {
+        if (all == null) return;
+        try {
+            if (remote == null) remote = getRemotePreferences("selection");
+            String saved = remote.getString("landscape", "");
+            if (saved == null || saved.isEmpty()) return;
+            int merged = 0;
+            for (String pkg : saved.split("\\n")) {
+                if (!pkg.matches("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")) continue;
+                Map<String, Object> config = all.get(pkg);
+                if (config == null) { config = new java.util.HashMap<>(); all.put(pkg, config); }
+                config.put("magicwindow", 1);
+                config.put("fullorientation", 1);
+                merged++;
+            }
+            if (merged > 0) log(Log.INFO, "功能补全", "横屏名单已合并：" + merged + " 项");
+        } catch (Throwable error) { logError("横屏名单合并失败", error); }
+    }
+
+    /** 将返回值按配置表处理；非 Map 时返回空以避免类型异常。@author bomo */
+    @SuppressWarnings("unchecked") private static Map<String, Map<String, Object>> castMap(Object value) {
+        return value instanceof Map ? (Map<String, Map<String, Object>>) value : null;
     }
 
     /** 获取目标对象的私有字段；字段不存在或不可访问时抛出反射异常。@author bomo */
@@ -103,7 +122,6 @@ public class ModernModule extends XposedModule {
     /** 合并原名单与远程设置；仅处理已核实的 V1 分支。@author bomo */
     private synchronized void prepare(Object target) throws ReflectiveOperationException {
         Object version = read(target, "mVppVersion");
-        log(Log.INFO, "功能补全", "诊断：mVppVersion=" + version);
         if ("V2".equals(version)) return;
         @SuppressWarnings("unchecked") List<String> current = (List<String>) read(target, "mConfigOsieSrAPP");
         if (current == null) throw new IllegalStateException("系统名单为空");
@@ -120,6 +138,7 @@ public class ModernModule extends XposedModule {
         listener = (preferences, key) -> { if ("packages".equals(key)) handler.post(() -> refresh(target)); };
         remote.registerOnSharedPreferenceChangeListener(listener);
     }
+
     /** 构造前台应用监听配置；参数为包名列表，反射失败时抛出异常。@author bomo */
     private Object config(List<?> packages) throws ReflectiveOperationException {
         Object value = configClass.getDeclaredConstructor().newInstance();
