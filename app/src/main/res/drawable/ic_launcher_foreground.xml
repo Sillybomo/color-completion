@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 功能补全 自适应图标前景：双窗屏幕框 + 星芒（author bomo）
+     安全区为视口中心 66x66，主体落在 x/y 21~87 之间。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+
+    <!-- 双窗屏幕框：evenOdd 挖出左右两扇窗口，对应横屏布局功能 -->
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="
+        M38,40 h32 a8,8 0 0 1 8,8 v28 a8,8 0 0 1 -8,8 h-32 a8,8 0 0 1 -8,-8 v-28 a8,8 0 0 1 8,-8 z
+        M44,48 h7 v28 h-7 z
+        M57,48 h7 v28 h-7 z" />
+
+    <!-- 星芒：对应画质增强，落在屏幕框右上方 -->
+    <path android:fillColor="#FFFFE9A8"
+        android:pathData="M80,22 L82.8,29.2 L90,32 L82.8,34.8 L80,42 L77.2,34.8 L70,32 L77.2,29.2 Z" />
+</vector>

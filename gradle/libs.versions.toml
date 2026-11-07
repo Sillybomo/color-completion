@@ -1,0 +1,41 @@
+[versions]
+agp = "9.1.0"
+kotlin = "2.4.10"
+coreKtx = "1.18.0"
+lifecycleRuntimeKtx = "2.10.0"
+activityCompose = "1.13.0"
+composeBom = "2026.08.00"
+couiCompose = "1.9.3"
+couiComposeWindowSize = "1.9.0"
+couiFoundation = "1.11.1"
+couiNavigationEvent = "1.1.2"
+couiCollection = "1.6.0"
+couiLifecycle = "2.11.0"
+couiMaterialKolor = "5.0.0"
+libxposed = "102.0.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+coui-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "couiFoundation" }
+coui-compose-window-size = { module = "org.jetbrains.compose.material3:material3-window-size-class", version.ref = "couiComposeWindowSize" }
+coui-collection = { module = "androidx.collection:collection", version.ref = "couiCollection" }
+coui-navigation-event = { module = "androidx.navigationevent:navigationevent-compose", version.ref = "couiNavigationEvent" }
+coui-lifecycle-runtime = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime", version.ref = "couiLifecycle" }
+coui-lifecycle-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "couiLifecycle" }
+coui-material-kolor = { module = "com.materialkolor:material-color-utilities", version.ref = "couiMaterialKolor" }
+libxposed-api = { group = "io.github.libxposed", name = "api", version.ref = "libxposed" }
+libxposed-service = { group = "io.github.libxposed", name = "service", version.ref = "libxposed" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

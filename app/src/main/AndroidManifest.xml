@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @author bomo; 功能补全模块声明。modern 化：xposed 元数据改由 resources/META-INF/xposed/ 三件套声明。 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
+
+    <application
+        android:name=".ModuleApplication"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="功能补全"
+        android:theme="@style/Theme.ColorCompletion">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ColorCompletion"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="de.robv.android.xposed.category.MODULE_SETTINGS" />
+            </intent-filter>
+        </activity>
+        <provider
+            android:name="io.github.libxposed.service.XposedProvider"
+            android:authorities="com.bomo.colorcompletion.XposedService"
+            android:exported="true" />
+        <provider
+            android:name=".AppListProvider"
+            android:authorities="com.bomo.colorcompletion.apps"
+            android:exported="true"
+            android:grantUriPermissions="false" />
+    </application>
+
+</manifest>
