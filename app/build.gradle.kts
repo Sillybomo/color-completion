@@ -41,7 +41,14 @@ android {
         }
         release {
             signingConfig = signingConfigs.getByName("dev")
-            isMinifyEnabled = false
+            // debug 包 dex 未裁剪约 37 MB，装机包走 R8 + 资源压缩；
+            // 入口类保留规则见 proguard-rules.pro（java_init.list 按全名加载，混淆即失效）。
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 
@@ -78,7 +85,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.ui.tooling.preview)
+    // 未使用 @Preview，不引入 ui-tooling-preview（它会被打进 release）。
     debugImplementation(libs.androidx.compose.ui.tooling)
     // material3 不再传递图标库；Search / KeyboardArrowDown 取自 icons-core。
     implementation("androidx.compose.material:material-icons-core")
