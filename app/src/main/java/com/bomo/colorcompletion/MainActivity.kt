@@ -245,7 +245,7 @@ private fun JoinedRow(index: Int, count: Int, content: @Composable ColumnScope.(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = if (last) 8.dp else 0.dp)
+                .padding(bottom = if (last) 16.dp else 0.dp)
                 .squircleSurface(colors.color, top, top, bottom, bottom)
         ) {
             content()

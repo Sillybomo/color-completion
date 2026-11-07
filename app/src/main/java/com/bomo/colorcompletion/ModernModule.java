@@ -86,7 +86,7 @@ public class ModernModule extends XposedModule {
         } catch (Throwable error) { logError("横屏布局不兼容", error); }
     }
 
-    /** 合并远程横屏名单；名单内应用标记为双窗与全方向支持，与哔哩哔哩的原厂配置一致。@author bomo */
+    /** 合并远程横屏名单；名单内应用补齐四种布局字段，与哔哩哔哩的原厂配置一致。@author bomo */
     private void applyLandscapeRoster(Map<String, Map<String, Object>> all) {
         if (all == null) return;
         try {
@@ -98,7 +98,11 @@ public class ModernModule extends XposedModule {
                 if (!pkg.matches("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")) continue;
                 Map<String, Object> config = all.get(pkg);
                 if (config == null) { config = new java.util.HashMap<>(); all.put(pkg, config); }
+                // AppLandscapeManager.handleFunctionStatus：字段存在且值不为 2 时生成对应选项，
+                // autolayout=自适应、magicwindow=双窗、compactwindow=居中，原始布局恒有。
+                config.put("autolayout", 1);
                 config.put("magicwindow", 1);
+                config.put("compactwindow", 1);
                 config.put("fullorientation", 1);
                 merged++;
             }
