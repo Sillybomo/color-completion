@@ -1,10 +1,20 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 // @author bomo
 // 功能补全模块应用构建脚本：Modern Xposed API 102 模块 + COUI Compose 界面。
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+// @author bomo
+// 用途：读取本地签名口令，避免把口令写进版本库。
+// 边界：local.properties 已被 .gitignore 忽略；未配置时回落到 Android 开发密钥默认口令 "android"，
+//       该口令属 Android SDK 通用默认值（非机密），仅适用于本机开发密钥 dev.keystore。
+//       仓库若转公开或换用正式密钥，必须在 local.properties 配置 dev.storePassword / dev.keyPassword。
+val localProps = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
 android {
@@ -27,11 +37,12 @@ android {
 
     signingConfigs {
         // 复用 build.py 时代的开发密钥（CN=Development, alias=dev），覆盖安装不断签。
+        // 口令取自 local.properties（不入库），见文件顶部说明。
         create("dev") {
             storeFile = file("../dev.keystore")
-            storePassword = "android"
-            keyAlias = "dev"
-            keyPassword = "android"
+            storePassword = localProps.getProperty("dev.storePassword", "android")
+            keyAlias = localProps.getProperty("dev.keyAlias", "dev")
+            keyPassword = localProps.getProperty("dev.keyPassword", "android")
         }
     }
 

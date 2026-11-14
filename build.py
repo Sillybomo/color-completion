@@ -1,11 +1,15 @@
 # @author bomo
 # 用途：构建功能补全开发版；无参数，输出 build/color-completion-dev.apk。
 # 边界：依赖本机 Android SDK 与 JDK；失败抛出异常，密钥仅用于开发测试。
+#       本脚本为 build.py 时代的遗留构建方式，现行构建请用 Gradle（:app:assembleRelease）。
+#       SDK 位置从环境变量 ANDROID_HOME / ANDROID_SDK_ROOT 读取，不再写死本机绝对路径。
 from pathlib import Path
 import os, subprocess, zipfile
 os.chdir(Path(__file__).parent)
-bt = Path('D:/Software/SDK/build-tools/35.0.0')
-android = 'D:/Software/SDK/platforms/android-35/android.jar'
+_sdk = os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
+if not _sdk: raise RuntimeError('请先设置 ANDROID_HOME 或 ANDROID_SDK_ROOT 指向 Android SDK 根目录')
+bt = Path(_sdk) / 'build-tools' / '35.0.0'
+android = str(Path(_sdk) / 'platforms' / 'android-35' / 'android.jar')
 for path in ('build/obj', 'build/dex', 'build/gen'): Path(path).mkdir(parents=True, exist_ok=True)
 def run(*args):
     # 执行命令并检查退出状态；参数为命令及参数，失败抛出异常。
