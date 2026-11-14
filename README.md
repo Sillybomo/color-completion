@@ -8,6 +8,7 @@ LSPosed 模块，面向 OPPO Pad（ColorOS 17 / Android 17），用名单制补�
 ![ColorOS](https://img.shields.io/badge/ColorOS-17-0066FF?style=flat-square)
 ![minSdk](https://img.shields.io/badge/minSdk-33-4B5563?style=flat-square)
 ![Release](https://img.shields.io/badge/Release-2.31_MiB-16A34A?style=flat-square)
+[![License](https://img.shields.io/badge/License-MIT-16A34A?style=flat-square)](LICENSE)
 
 > 系统级修改存在稳定性风险。本模块只改运行时数据，不触碰系统分区、不覆盖系统文件；但仍建议先在可回滚的环境验证。
 
@@ -187,7 +188,7 @@ color-completion/
 |---|---|---|
 | COUI（`third_party/coui/`，7 个模块） | [suqi8/coui](https://github.com/suqi8/coui) | Apache-2.0 |
 | Jetpack Compose、AndroidX | Google | Apache-2.0 |
-| libxposed API / Service | [LSPosed](https://github.com/LibXposed/libxposed-api) | Apache-2.0 |
+| libxposed API / Service | [libxposed/api](https://github.com/libxposed/api) | Apache-2.0 |
 
 COUI 以源码形式内联，其 `LICENSE`、`UPSTREAM.txt`、`sources.json` 保留在 `third_party/coui/` 目录内。
 
@@ -195,6 +196,8 @@ COUI 以源码形式内联，其 `LICENSE`、`UPSTREAM.txt`、`sources.json` 保
 
 ## 11. 许可
 
-本仓库为个人自用项目，未附开源许可证文件。在补充许可证之前，请勿将其视为可自由分发或商用的代码。
+[MIT License](LICENSE) © 2026 bomo
 
-内联的第三方组件各自遵循其原有许可（见上一节）。
+可自由使用、修改、分发与商用，保留版权声明与许可声明即可。
+
+内联的第三方组件各自遵循其原有许可（见上一节）：COUI 为 Apache-2.0，随源码保留其 `LICENSE` 与来源说明。
