@@ -8,7 +8,7 @@ LSPosed 模块，面向 OPPO Pad（ColorOS 17 / Android 17），用名单制补�
 ![ColorOS](https://img.shields.io/badge/ColorOS-17-0066FF?style=flat-square)
 ![minSdk](https://img.shields.io/badge/minSdk-33-4B5563?style=flat-square)
 ![Release](https://img.shields.io/badge/Release-2.31_MiB-16A34A?style=flat-square)
-[![License](https://img.shields.io/badge/License-MIT-16A34A?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-GPL--3.0-0066FF?style=flat-square)](LICENSE)
 
 > 系统级修改存在稳定性风险。本模块只改运行时数据，不触碰系统分区、不覆盖系统文件；但仍建议先在可回滚的环境验证。
 
@@ -196,8 +196,14 @@ COUI 以源码形式内联，其 `LICENSE`、`UPSTREAM.txt`、`sources.json` 保
 
 ## 11. 许可
 
-[MIT License](LICENSE) © 2026 bomo
+[GNU General Public License v3.0](LICENSE) © 2026 bomo
 
-可自由使用、修改、分发与商用，保留版权声明与许可声明即可。
+本程序是自由软件：你可以依据自由软件基金会发布的 GNU 通用公共许可证（第 3 版，或你选择的任何更高版本）的条款，重新分发和/或修改它。
 
-内联的第三方组件各自遵循其原有许可（见上一节）：COUI 为 Apache-2.0，随源码保留其 `LICENSE` 与来源说明。
+本程序基于"有用"的目的分发，但不提供任何担保，甚至不包含适销性或特定用途适用性的默示担保。详见 [LICENSE](LICENSE) 全文。
+
+**分发衍生作品时，必须以 GPL-3.0 提供完整对应源码。** 如果你修改后分发（包括但不限于重新打包成 APK 发布），需要一并公开修改后的源码。
+
+**版本分界**：本仓库 `76ab7d7` 及更早的提交以 MIT 发布，自本提交起改用 GPL-3.0。已经按 MIT 条款获取旧版本的人，其既有授权不受影响；GPL-3.0 只约束此后的版本。
+
+内联的第三方组件各自遵循其原有许可：COUI、Jetpack Compose、libxposed 均为 Apache-2.0，与 GPL-3.0 兼容，`third_party/coui/` 内保留其原始 `LICENSE` 与来源说明。
